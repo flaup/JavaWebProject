@@ -1,18 +1,14 @@
 package dbService.dao;
 
 import dbService.dataSets.UsersDataSet;
-import org.hibernate.Criteria;
+import jakarta.persistence.TypedQuery;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.ParameterExpression;
+import jakarta.persistence.criteria.Root;
 import org.hibernate.HibernateException;
 import org.hibernate.Session;
-import org.hibernate.criterion.Restrictions;
 
-/**
- * @author v.chibrikov
- *         <p>
- *         Пример кода для курса на https://stepic.org/
- *         <p>
- *         Описание курса и лицензия: https://github.com/vitaly-chibrikov/stepic_java_webserver
- */
 public class UsersDAO {
 
     private Session session;
@@ -26,8 +22,14 @@ public class UsersDAO {
     }
 
     public long getUserId(String name) throws HibernateException {
-        Criteria criteria = session.createCriteria(UsersDataSet.class);
-        return ((UsersDataSet) criteria.add(Restrictions.eq("name", name)).uniqueResult()).getId();
+        CriteriaBuilder criteriaBuilder = session.getCriteriaBuilder();
+        CriteriaQuery<UsersDataSet> criteriaQuery = criteriaBuilder.createQuery(UsersDataSet.class);
+        Root<UsersDataSet> usersDataSetRoot = criteriaQuery.from(UsersDataSet.class);
+        ParameterExpression<String> nameExpression = criteriaBuilder.parameter(String.class);
+        criteriaQuery.select(usersDataSetRoot).where(criteriaBuilder.equal(usersDataSetRoot.get("name"), nameExpression));
+        TypedQuery<UsersDataSet> query = session.createQuery(criteriaQuery);
+        query.setParameter(nameExpression, name);
+        return query.getSingleResult().getId();
     }
 
     public long insertUser(String name) throws HibernateException {
